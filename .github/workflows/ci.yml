@@ -1,0 +1,82 @@
+# Continuous integration & delivery for c3a3‑config‑loader
+
+name: CI
+
+on:
+  push:
+    branches: [ main ]            # run tests on every commit
+  pull_request:
+    branches: [ main ]            # run tests on PRs
+  release:
+    types: [ published ]          # triggers build‑dist and publish jobs
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install project + dev deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev]
+
+      - name: Run pytest with coverage
+        run: |
+          python -m pip install coverage[toml]
+          coverage run -m pytest -q
+
+  build-dist:
+    needs: build-test
+    if: ${{ github.event_name == 'release' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+          cache: "pip"
+
+      - name: Build wheel & sdist
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Upload dist artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+  publish:
+    needs: build-dist
+    if: ${{ github.event_name == 'release' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Publish to PyPI / TestPyPI
+        env:
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: ${{ github.event.release.prerelease && secrets.TESTPYPI_TOKEN || secrets.PYPI_TOKEN }}
+          TWINE_REPOSITORY_URL: ${{ github.event.release.prerelease && 'https://test.pypi.org/legacy/' || 'https://upload.pypi.org/legacy/' }}
+        run: |
+          python -m pip install --upgrade pip twine
+          twine upload --non-interactive dist/*
