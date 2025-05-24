@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class ConfigValidator:
     """Validates configuration specifications."""
 
-    def __init__(self, config: 'Configuration'):
+    def __init__(self, config: "Configuration"):
         self.config = config
 
     def validate_spec(self):
@@ -25,11 +25,11 @@ class ConfigValidator:
         errors = []
 
         # Validate app_name
-        if not re.match(r'^[a-z0-9_-]+$', self.config.app_name.lower()):
+        if not re.match(r"^[a-z0-9_-]+$", self.config.app_name.lower()):
             errors.append(f"Invalid app_name: {self.config.app_name}")
 
         # Validate precedence
-        valid_sources = {'args', 'env', 'rc'}
+        valid_sources = {"args", "env", "rc"}
         if not all(p in valid_sources for p in self.config.precedence):
             errors.append(f"Invalid precedence values: {self.config.precedence}")
 
@@ -37,7 +37,7 @@ class ConfigValidator:
         seen_params = set()
         for param in self.config.parameters:
             # Check name format
-            if not re.match(r'^[a-z0-9_-]+$', param.name):
+            if not re.match(r"^[a-z0-9_-]+$", param.name):
                 errors.append(f"Invalid parameter name: {param.name}")
 
             # Check for duplicates
@@ -47,26 +47,36 @@ class ConfigValidator:
             seen_params.add(key)
 
             # Validate type
-            if param.type not in ['string', 'number', 'boolean']:
+            if param.type not in ["string", "number", "boolean"]:
                 errors.append(f"Invalid type for {param.name}: {param.type}")
 
             # Validate required vs default
             if param.required and param.default is not None:
-                errors.append(f"Required parameter {param.name} cannot have default value")
+                errors.append(
+                    f"Required parameter {param.name} cannot have default value"
+                )
 
             # Validate accepts
             if param.accepts:
-                if param.type == 'boolean':
-                    errors.append(f"Boolean parameter {param.name} cannot have 'accepts' restriction")
+                if param.type == "boolean":
+                    errors.append(
+                        f"Boolean parameter {param.name} cannot have 'accepts' restriction"
+                    )
                 elif len(param.accepts) < 2:
-                    errors.append(f"Parameter {param.name} 'accepts' must have at least 2 values")
+                    errors.append(
+                        f"Parameter {param.name} 'accepts' must have at least 2 values"
+                    )
                 elif param.default is not None and param.default not in param.accepts:
-                    errors.append(f"Default value for {param.name} not in accepted values")
+                    errors.append(
+                        f"Default value for {param.name} not in accepted values"
+                    )
 
             # Validate protocol
             if param.protocol and self.config.handle_protocol:
                 try:
-                    self.config.plugin_manager.validate_parameter_protocol_compatibility(param, param.protocol)
+                    self.config.plugin_manager.validate_parameter_protocol_compatibility(
+                        param, param.protocol
+                    )
                 except ValueError as e:
                     errors.append(str(e))
 
@@ -74,16 +84,22 @@ class ConfigValidator:
         found_optional = False
         for arg in self.config.arguments:
             if found_optional and arg.required:
-                errors.append(f"Required argument {arg.name} cannot follow optional arguments")
+                errors.append(
+                    f"Required argument {arg.name} cannot follow optional arguments"
+                )
             if not arg.required:
                 found_optional = True
 
             # Validate argument protocol
             if arg.protocol and self.config.handle_protocol:
                 if not self.config.plugin_manager.is_protocol_registered(arg.protocol):
-                    errors.append(f"Required protocol '{arg.protocol}' for argument {arg.name} is not registered")
+                    errors.append(
+                        f"Required protocol '{arg.protocol}' for argument {arg.name} is not registered"
+                    )
                 else:
-                    manifest = self.config.plugin_manager.get_plugin_manifest(arg.protocol)
+                    manifest = self.config.plugin_manager.get_plugin_manifest(
+                        arg.protocol
+                    )
 
                     # Check type compatibility
                     if arg.type != manifest.type:
@@ -92,4 +108,6 @@ class ConfigValidator:
                         )
 
         if errors:
-            raise ValueError("Configuration specification errors:\n" + "\n".join(errors))
+            raise ValueError(
+                "Configuration specification errors:\n" + "\n".join(errors)
+            )

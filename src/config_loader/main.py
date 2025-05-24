@@ -28,15 +28,17 @@ from typing import Dict, List, Any, Optional
 class Configuration:
     """Configuration processor and validator."""
 
-    def __init__(self, spec: Dict[str, Any], plugins: Optional[List[ConfigPlugin]] = None):
+    def __init__(
+        self, spec: Dict[str, Any], plugins: Optional[List[ConfigPlugin]] = None
+    ):
         self.spec = spec
-        self.app_name = spec.get('app_name', 'app')
-        self.print_help_on_err = spec.get('print_help_on_err', False)
-        self.handle_protocol = spec.get('handle_protocol', True)
-        self.sources = spec.get('sources', {'args': True, 'rc': True, 'env': True})
-        self.precedence = spec.get('precedence', ['args', 'env', 'rc'])
-        self.parameters = [ConfigParam(**p) for p in spec.get('parameters', [])]
-        self.arguments = [ConfigArg(**a) for a in spec.get('arguments', [])]
+        self.app_name = spec.get("app_name", "app")
+        self.print_help_on_err = spec.get("print_help_on_err", False)
+        self.handle_protocol = spec.get("handle_protocol", True)
+        self.sources = spec.get("sources", {"args": True, "rc": True, "env": True})
+        self.precedence = spec.get("precedence", ["args", "env", "rc"])
+        self.parameters = [ConfigParam(**p) for p in spec.get("parameters", [])]
+        self.arguments = [ConfigArg(**a) for a in spec.get("arguments", [])]
 
         # Initialize components
         self.encryption = EncryptionManager()
@@ -79,55 +81,67 @@ class Configuration:
         sources_data = {}
         debug_info = {}
 
-        if self.sources.get('args', True):
-            sources_data['args'] = self.arg_loader.load(args)
+        if self.sources.get("args", True):
+            sources_data["args"] = self.arg_loader.load(args)
 
-        if self.sources.get('env', True):
-            sources_data['env'] = self.env_loader.load()
+        if self.sources.get("env", True):
+            sources_data["env"] = self.env_loader.load()
 
-        if self.sources.get('rc', True):
-            sources_data['rc'] = self.rc_loader.load()
+        if self.sources.get("rc", True):
+            sources_data["rc"] = self.rc_loader.load()
 
         # Check for debug flag
-        show_debug = sources_data.get('args', {}).get('debug', False)
+        show_debug = sources_data.get("args", {}).get("debug", False)
 
         # Merge according to precedence
         final_config = {}
 
         for param in self.parameters:
-            namespace = param.namespace or 'default'
+            namespace = param.namespace or "default"
             value = None
-            source = 'default'
+            source = "default"
 
             # Check sources in precedence order
-            for source_name in reversed(self.precedence):  # Reverse for proper precedence
-                if source_name == 'args':
+            for source_name in reversed(
+                self.precedence
+            ):  # Reverse for proper precedence
+                if source_name == "args":
                     arg_key = f"param_{namespace}_{param.name}"
-                    if sources_data.get('args', {}).get(arg_key) is not None:
-                        value = sources_data['args'][arg_key]
-                        source = 'args'
-                elif source_name == 'env':
-                    if namespace in sources_data.get('env', {}) and param.name in sources_data['env'][namespace]:
-                        value = sources_data['env'][namespace][param.name]
-                        source = 'env'
-                elif source_name == 'rc':
-                    if namespace in sources_data.get('rc', {}) and param.name in sources_data['rc'][namespace]:
-                        value = sources_data['rc'][namespace][param.name]
-                        source = 'rc'
+                    if sources_data.get("args", {}).get(arg_key) is not None:
+                        value = sources_data["args"][arg_key]
+                        source = "args"
+                elif source_name == "env":
+                    if (
+                        namespace in sources_data.get("env", {})
+                        and param.name in sources_data["env"][namespace]
+                    ):
+                        value = sources_data["env"][namespace][param.name]
+                        source = "env"
+                elif source_name == "rc":
+                    if (
+                        namespace in sources_data.get("rc", {})
+                        and param.name in sources_data["rc"][namespace]
+                    ):
+                        value = sources_data["rc"][namespace][param.name]
+                        source = "rc"
 
             # Use default if no value found
             if value is None:
                 if param.required:
-                    error_msg = f"Required parameter {namespace}.{param.name} not provided"
+                    error_msg = (
+                        f"Required parameter {namespace}.{param.name} not provided"
+                    )
                     if self.print_help_on_err:
                         self.print_help()
                     raise ValueError(error_msg)
                 value = param.default
-                source = 'default'
+                source = "default"
 
             # Validate required protocol BEFORE processing (skip for default values)
-            if param.protocol and self.handle_protocol and source != 'default':
-                if not isinstance(value, str) or not self.plugin_manager.is_protocol_value(value):
+            if param.protocol and self.handle_protocol and source != "default":
+                if not isinstance(
+                    value, str
+                ) or not self.plugin_manager.is_protocol_value(value):
                     error_msg = f"Parameter {namespace}.{param.name} requires protocol '{param.protocol}' but got non-protocol value"
                     if self.print_help_on_err:
                         self.print_help()
@@ -146,7 +160,14 @@ class Configuration:
                 value = self._process_protocol_value(value, param, source)
 
             # Parse and validate value (if not processed by protocol)
-            if value is not None and isinstance(value, str) and not (self.handle_protocol and self.plugin_manager.is_protocol_value(value)):
+            if (
+                value is not None
+                and isinstance(value, str)
+                and not (
+                    self.handle_protocol
+                    and self.plugin_manager.is_protocol_value(value)
+                )
+            ):
                 value = self._parse_value(value, param.type)
 
                 # Validate accepts
@@ -170,7 +191,7 @@ class Configuration:
         if self.arguments:
             arg_values = []
             for i, arg in enumerate(self.arguments):
-                arg_value = sources_data.get('args', {}).get(arg.name)
+                arg_value = sources_data.get("args", {}).get(arg.name)
                 if arg_value is None:
                     if arg.required:
                         error_msg = f"Required argument {arg.name} not provided"
@@ -181,14 +202,18 @@ class Configuration:
 
                 # Validate required protocol for arguments BEFORE processing
                 if arg.protocol and self.handle_protocol and arg_value is not None:
-                    if not isinstance(arg_value, str) or not self.plugin_manager.is_protocol_value(arg_value):
+                    if not isinstance(
+                        arg_value, str
+                    ) or not self.plugin_manager.is_protocol_value(arg_value):
                         error_msg = f"Argument {arg.name} requires protocol '{arg.protocol}' but got non-protocol value"
                         if self.print_help_on_err:
                             self.print_help()
                         raise ValueError(error_msg)
                     else:
                         # Validate that the correct protocol is used
-                        protocol, _ = self.plugin_manager.parse_protocol_value(arg_value)
+                        protocol, _ = self.plugin_manager.parse_protocol_value(
+                            arg_value
+                        )
                         if protocol != arg.protocol:
                             error_msg = f"Argument {arg.name} requires protocol '{arg.protocol}' but got '{protocol}'"
                             if self.print_help_on_err:
@@ -197,20 +222,27 @@ class Configuration:
 
                 # Process protocol values for arguments AFTER validation
                 if arg_value is not None and self.handle_protocol:
-                    arg_value = self._process_protocol_value(arg_value, arg, 'args')
+                    arg_value = self._process_protocol_value(arg_value, arg, "args")
 
                 # Parse value if not processed by protocol
-                if arg_value is not None and isinstance(arg_value, str) and not (self.handle_protocol and self.plugin_manager.is_protocol_value(arg_value)):
+                if (
+                    arg_value is not None
+                    and isinstance(arg_value, str)
+                    and not (
+                        self.handle_protocol
+                        and self.plugin_manager.is_protocol_value(arg_value)
+                    )
+                ):
                     arg_value = self._parse_value(arg_value, arg.type)
 
                 arg_values.append(arg_value)
 
             # Add arguments to config
-            if 'arguments' not in final_config:
-                final_config['arguments'] = {}
+            if "arguments" not in final_config:
+                final_config["arguments"] = {}
             for arg, value in zip(self.arguments, arg_values):
-                final_config['arguments'][arg.name] = value
-                debug_info[f"arguments.{arg.name}"] = 'args'
+                final_config["arguments"][arg.name] = value
+                debug_info[f"arguments.{arg.name}"] = "args"
 
         result = ConfigurationResult(final_config, debug_info)
 
@@ -221,37 +253,55 @@ class Configuration:
 
     def _process_protocol_value(self, value: Any, param_or_arg, source: str) -> Any:
         """Process a value that might use protocol syntax."""
-        if not isinstance(value, str) or not self.plugin_manager.is_protocol_value(value):
+        if not isinstance(value, str) or not self.plugin_manager.is_protocol_value(
+            value
+        ):
             return value
 
         try:
             # Load the value using the plugin
-            loaded_value = self.plugin_manager.load_protocol_value(value, param_or_arg.type)
+            loaded_value = self.plugin_manager.load_protocol_value(
+                value, param_or_arg.type
+            )
 
             # Check if the protocol returns sensitive data
             protocol, _ = self.plugin_manager.parse_protocol_value(value)
             manifest = self.plugin_manager.get_plugin_manifest(protocol)
 
             # Validate obfuscation requirement for sensitive protocols
-            if manifest.sensitive and hasattr(param_or_arg, 'obfuscated') and not param_or_arg.obfuscated:
-                param_name = f"{param_or_arg.namespace or 'default'}.{param_or_arg.name}" if hasattr(param_or_arg, 'namespace') else param_or_arg.name
-                raise ValueError(f"Parameter {param_name} must be obfuscated when using sensitive protocol '{protocol}'")
+            if (
+                manifest.sensitive
+                and hasattr(param_or_arg, "obfuscated")
+                and not param_or_arg.obfuscated
+            ):
+                param_name = (
+                    f"{param_or_arg.namespace or 'default'}.{param_or_arg.name}"
+                    if hasattr(param_or_arg, "namespace")
+                    else param_or_arg.name
+                )
+                raise ValueError(
+                    f"Parameter {param_name} must be obfuscated when using sensitive protocol '{protocol}'"
+                )
 
             return loaded_value
 
         except Exception as e:
-            param_name = f"{param_or_arg.namespace or 'default'}.{param_or_arg.name}" if hasattr(param_or_arg, 'namespace') else param_or_arg.name
+            param_name = (
+                f"{param_or_arg.namespace or 'default'}.{param_or_arg.name}"
+                if hasattr(param_or_arg, "namespace")
+                else param_or_arg.name
+            )
             if self.print_help_on_err:
                 self.print_help()
             raise ValueError(f"Failed to load protocol value for {param_name}: {e}")
 
     def _parse_value(self, value: str, param_type: str) -> Any:
         """Parse string value to appropriate type."""
-        if param_type == 'boolean':
-            return value.lower() in ('true', '1', 'yes', 'on')
-        elif param_type == 'number':
+        if param_type == "boolean":
+            return value.lower() in ("true", "1", "yes", "on")
+        elif param_type == "number":
             try:
-                if '.' in value:
+                if "." in value:
                     return float(value)
                 return int(value)
             except ValueError:
@@ -260,7 +310,9 @@ class Configuration:
 
     def print_help(self):
         """Print CLI help information."""
-        print(f"\nUsage: {self.app_name} [OPTIONS] {' '.join(arg.name.upper() if arg.required else f'[{arg.name.upper()}]' for arg in self.arguments)}")
+        print(
+            f"\nUsage: {self.app_name} [OPTIONS] {' '.join(arg.name.upper() if arg.required else f'[{arg.name.upper()}]' for arg in self.arguments)}"
+        )
 
         print("\nOptions:")
         for param in self.parameters:
@@ -297,7 +349,9 @@ class Configuration:
             for protocol in sorted(self.plugin_manager.get_registered_protocols()):
                 manifest = self.plugin_manager.get_plugin_manifest(protocol)
                 sensitive_info = " [sensitive]" if manifest.sensitive else ""
-                print(f"  {protocol}://<value>          {manifest.type}{sensitive_info}")
+                print(
+                    f"  {protocol}://<value>          {manifest.type}{sensitive_info}"
+                )
 
     def _get_arg_name(self, param: ConfigParam) -> str:
         """Get command line argument name."""
@@ -312,6 +366,8 @@ def load_config(fp, plugins: Optional[List[ConfigPlugin]] = None) -> Configurati
     return Configuration(config_data, plugins)
 
 
-def load_configs(spec: Dict[str, Any], plugins: Optional[List[ConfigPlugin]] = None) -> Configuration:
+def load_configs(
+    spec: Dict[str, Any], plugins: Optional[List[ConfigPlugin]] = None
+) -> Configuration:
     """Load configuration from specification dictionary."""
     return Configuration(spec, plugins)

@@ -15,8 +15,9 @@ from typing import Any, Optional, Union
 @dataclass
 class PluginManifest:
     """Plugin manifest containing metadata and constraints."""
+
     protocol: str
-    type: str = 'string'  # 'string', 'number', 'boolean'
+    type: str = "string"  # 'string', 'number', 'boolean'
     min_length: Optional[int] = None  # For strings only
     max_length: Optional[int] = None  # For strings only
     min_value: Optional[Union[int, float]] = None  # For numbers only
@@ -61,17 +62,23 @@ class ConfigPlugin(ABC):
         """
         manifest = self.manifest
 
-        if manifest.type == 'string' and isinstance(value, str):
+        if manifest.type == "string" and isinstance(value, str):
             if manifest.min_length is not None and len(value) < manifest.min_length:
-                raise ValueError(f"Value length {len(value)} is less than minimum {manifest.min_length}")
+                raise ValueError(
+                    f"Value length {len(value)} is less than minimum {manifest.min_length}"
+                )
             if manifest.max_length is not None and len(value) > manifest.max_length:
-                raise ValueError(f"Value length {len(value)} exceeds maximum {manifest.max_length}")
+                raise ValueError(
+                    f"Value length {len(value)} exceeds maximum {manifest.max_length}"
+                )
 
-        elif manifest.type == 'number' and isinstance(value, (int, float)):
+        elif manifest.type == "number" and isinstance(value, (int, float)):
             if manifest.min_value is not None and value < manifest.min_value:
-                raise ValueError(f"Value {value} is less than minimum {manifest.min_value}")
+                raise ValueError(
+                    f"Value {value} is less than minimum {manifest.min_value}"
+                )
             if manifest.max_value is not None and value > manifest.max_value:
                 raise ValueError(f"Value {value} exceeds maximum {manifest.max_value}")
 
-        elif manifest.type == 'boolean' and not isinstance(value, bool):
+        elif manifest.type == "boolean" and not isinstance(value, bool):
             raise ValueError(f"Expected boolean value, got {type(value).__name__}")

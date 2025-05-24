@@ -21,7 +21,7 @@ class ConfigurationResult:
         # Create namespace objects dynamically
         for namespace, values in config_dict.items():
             if not hasattr(self, namespace):
-                setattr(self, namespace, type('ConfigNamespace', (), values)())
+                setattr(self, namespace, type("ConfigNamespace", (), values)())
 
     def export_dict(self) -> Dict[str, Any]:
         """Export configuration as dictionary."""
@@ -41,7 +41,7 @@ class ConfigurationResult:
 
     def _get_nested_value(self, key: str) -> Any:
         """Get nested value using dot notation."""
-        parts = key.split('.')
+        parts = key.split(".")
         value = self._config
         for part in parts:
             value = value.get(part, {})

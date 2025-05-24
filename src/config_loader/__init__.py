@@ -21,12 +21,12 @@ from .plugin_interface import ConfigPlugin, PluginManifest
 
 __version__ = "1.0.0"
 __all__ = [
-    'Configuration',
-    'ConfigParam',
-    'ConfigArg',
-    'ConfigurationResult',
-    'ConfigPlugin',
-    'PluginManifest',
-    'load_config',
-    'load_configs'
+    "Configuration",
+    "ConfigParam",
+    "ConfigArg",
+    "ConfigurationResult",
+    "ConfigPlugin",
+    "PluginManifest",
+    "load_config",
+    "load_configs",
 ]

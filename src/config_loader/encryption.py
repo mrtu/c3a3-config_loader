@@ -27,7 +27,7 @@ class EncryptionManager:
             value = str(value)
 
         # Convert to bytes
-        plaintext = value.encode('utf-8')
+        plaintext = value.encode("utf-8")
 
         # Generate random IV
         iv = secrets.token_bytes(16)  # AES block size is 16 bytes
@@ -38,13 +38,17 @@ class EncryptionManager:
         padded_data += padder.finalize()
 
         # Encrypt
-        cipher = Cipher(algorithms.AES(self._encryption_key), modes.CBC(iv), backend=default_backend())
+        cipher = Cipher(
+            algorithms.AES(self._encryption_key),
+            modes.CBC(iv),
+            backend=default_backend(),
+        )
         encryptor = cipher.encryptor()
         ciphertext = encryptor.update(padded_data) + encryptor.finalize()
 
         # Combine IV and ciphertext, then base64 encode
         encrypted_data = iv + ciphertext
-        encoded_data = base64.b64encode(encrypted_data).decode('ascii')
+        encoded_data = base64.b64encode(encrypted_data).decode("ascii")
 
         return f"obfuscated:{encoded_data}"
 
@@ -74,7 +78,11 @@ class EncryptionManager:
 
         try:
             # Decrypt
-            cipher = Cipher(algorithms.AES(self._encryption_key), modes.CBC(iv), backend=default_backend())
+            cipher = Cipher(
+                algorithms.AES(self._encryption_key),
+                modes.CBC(iv),
+                backend=default_backend(),
+            )
             decryptor = cipher.decryptor()
             padded_plaintext = decryptor.update(ciphertext) + decryptor.finalize()
 
@@ -83,6 +91,6 @@ class EncryptionManager:
             plaintext = unpadder.update(padded_plaintext)
             plaintext += unpadder.finalize()
 
-            return plaintext.decode('utf-8')
+            return plaintext.decode("utf-8")
         except Exception as e:
             raise ValueError(f"Failed to decrypt value: {e}")

@@ -14,6 +14,7 @@ from typing import Any, List, Optional
 @dataclass
 class ConfigParam:
     """Represents a configuration parameter."""
+
     namespace: Optional[str]
     name: str
     type: str
@@ -27,6 +28,7 @@ class ConfigParam:
 @dataclass
 class ConfigArg:
     """Represents a positional argument."""
+
     name: str
     type: str
     required: bool = False

@@ -18,10 +18,10 @@ if TYPE_CHECKING:
 class PluginManager:
     """Manages configuration plugins."""
 
-    def __init__(self, config: 'Configuration'):
+    def __init__(self, config: "Configuration"):
         self.config = config
         self._plugins: Dict[str, ConfigPlugin] = {}
-        self._protocol_pattern = re.compile(r'^([a-zA-Z][a-zA-Z0-9_-]*):\/\/(.+)$')
+        self._protocol_pattern = re.compile(r"^([a-zA-Z][a-zA-Z0-9_-]*):\/\/(.+)$")
 
     def register_plugin(self, plugin: ConfigPlugin) -> None:
         """
@@ -40,28 +40,34 @@ class PluginManager:
 
         # Check for duplicate protocols
         if manifest.protocol in self._plugins:
-            raise ValueError(f"Plugin for protocol '{manifest.protocol}' is already registered")
+            raise ValueError(
+                f"Plugin for protocol '{manifest.protocol}' is already registered"
+            )
 
         self._plugins[manifest.protocol] = plugin
 
     def _validate_manifest(self, manifest: PluginManifest) -> None:
         """Validate a plugin manifest."""
         # Validate protocol name
-        if not re.match(r'^[a-zA-Z][a-zA-Z0-9_-]*$', manifest.protocol):
+        if not re.match(r"^[a-zA-Z][a-zA-Z0-9_-]*$", manifest.protocol):
             raise ValueError(f"Invalid protocol name: {manifest.protocol}")
 
         # Validate type
-        if manifest.type not in ['string', 'number', 'boolean']:
+        if manifest.type not in ["string", "number", "boolean"]:
             raise ValueError(f"Invalid type: {manifest.type}")
 
         # Validate constraints
-        if manifest.type != 'string':
+        if manifest.type != "string":
             if manifest.min_length is not None or manifest.max_length is not None:
-                raise ValueError(f"Length constraints only valid for string type, not {manifest.type}")
+                raise ValueError(
+                    f"Length constraints only valid for string type, not {manifest.type}"
+                )
 
-        if manifest.type != 'number':
+        if manifest.type != "number":
             if manifest.min_value is not None or manifest.max_value is not None:
-                raise ValueError(f"Value constraints only valid for number type, not {manifest.type}")
+                raise ValueError(
+                    f"Value constraints only valid for number type, not {manifest.type}"
+                )
 
         # Validate constraint ranges
         if manifest.min_length is not None and manifest.max_length is not None:
