@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Prosperity-3.0.0
-# © 2025 Your Name — see LICENSE.md for terms.
+# © 2025 ã — see LICENSE.md for terms.
 
 """
 Configuration Loader - Plugin Manager
