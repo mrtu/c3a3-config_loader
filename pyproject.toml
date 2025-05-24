@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=80", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "c3a3-config-loader"
+description = "Loads configurations from different files with ease"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "ã", email = "me@c3a3.me" }]
+license = { file = "LICENSE.md" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: Other/Proprietary License",
+]
+dependencies = [
+    "cryptography>=42.0.0",
+    "tomli>=2.0.0 ; python_version<'3.11'",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-cov",
+    "mypy",
+    "ruff",
+    "types-toml",
+]
+
+[project.urls]
+Homepage = "https://github.com/mrtu/c3a3-config_loader"
+Documentation = "https://github.com/mrtu/c3a3-config_loader#readme"
+Issues = "https://github.com/mrtu/c3a3-config_loader/issues"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests*"]
+
+[tool.setuptools_scm]
+
+[tool.pytest.ini_options]
+addopts = "-ra -q"
+testpaths = ["tests"]
+
+[tool.mypy]
+strict = true
+files = ["config_loader"]
