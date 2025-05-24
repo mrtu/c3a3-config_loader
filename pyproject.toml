@@ -3,7 +3,7 @@ requires = ["setuptools>=80", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "c3a3 Configuration Loader"
+name = "c3a3-config-loader"
 description = "Loads configurations from different files with ease"
 readme = "README.md"
 requires-python = ">=3.9"
