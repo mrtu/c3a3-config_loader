@@ -1,0 +1,110 @@
+# ---------------------------------------------------------------------------
+# Python byte‑code, virtualenvs, packaging
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Build & distribution artifacts
+build/
+dist/
+.eggs/
+*.egg-info/
+*.egg
+
+# Installer & packaging logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit‑test / coverage / tox
+.coverage*
+.pytest_cache/
+.tox/
+.nox/
+htmlcov/
+
+# Type‑checking, profiling & static analysis
+.mypy_cache/
+.pyre/
+.dmypy.json
+.pytype/
+
+# Sphinx / MkDocs / other docs output
+docs/_build/
+site/
+
+# Jupyter & IPython
+.ipynb_checkpoints/
+
+# Local configuration files
+.env
+.env.*
+*.env
+
+# ---------------------------------------------------------------------------
+# IDEs & editors
+# ---------------------------------------------------------------------------
+# JetBrains – IntelliJ IDEA, PyCharm, etc.
+.idea/
+*.iml
+*.iws
+out/
+
+# Visual Studio Code
+.vscode/
+.history/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim / Neovim swaps & views
+*.swp
+*.swo
+*.vim*
+
+# ---------------------------------------------------------------------------
+# Operating‑system cruft
+# ---------------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ---------------------------------------------------------------------------
+# Miscellaneous
+# ---------------------------------------------------------------------------
+# Logs
+*.log
+
+# Compiled shared objects
+*.so
+
+# Local secrets & overrides
+local_settings.py
+
+# End of .gitignore
