@@ -36,7 +36,10 @@ jobs:
     if: ${{ github.event_name == 'release' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.9"
@@ -53,7 +56,6 @@ jobs:
     needs: build-dist
     if: ${{ github.event_name == 'release' }}
     runs-on: ubuntu-latest
-    environment: main
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -66,5 +68,3 @@ jobs:
 
       - name: Publish to PyPI via OIDC
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          project_name: c3a3-config_loader

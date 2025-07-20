@@ -48,6 +48,7 @@ where = ["src"]
 exclude = ["tests*"]
 
 [tool.setuptools_scm]
+fallback_version = "1.0.0"
 
 [tool.pytest.ini_options]
 addopts = "-ra -q"
