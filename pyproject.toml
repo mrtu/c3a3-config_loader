@@ -3,14 +3,17 @@ requires = ["setuptools>=80", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "c3a3-config-loader"
+name = "c3a3-config_loader"
 description = "Loads configurations from different files with ease"
-readme = "README.md"
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9"
 authors = [{ name = "ã", email = "me@c3a3.me" }]
-license = { file = "LICENSE.md" }
+license = { file = "LICENSE" }
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
     "License :: Other/Proprietary License",
 ]
 dependencies = [
@@ -18,6 +21,7 @@ dependencies = [
     "tomli>=2.0.0 ; python_version<'3.11'",
 ]
 dynamic = ["version"]
+
 
 [project.optional-dependencies]
 dev = [
@@ -32,6 +36,8 @@ dev = [
 Homepage = "https://github.com/mrtu/c3a3-config_loader"
 Documentation = "https://github.com/mrtu/c3a3-config_loader#readme"
 Issues = "https://github.com/mrtu/c3a3-config_loader/issues"
+"Bug Tracker" = "https://github.com/mrtu/c3a3-config_loader/issues"
+"License" = "https://github.com/mrtu/c3a3-config_loader/blob/main/LICENSE"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
