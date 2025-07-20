@@ -1,5 +1,9 @@
 [build-system]
-requires = ["setuptools>=80", "wheel"]
+requires = [
+    "setuptools>=80",
+    "wheel>=0.45.1",
+    "setuptools_scm[toml]>=8.3.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -49,6 +53,7 @@ exclude = ["tests*"]
 
 [tool.setuptools_scm]
 fallback_version = "1.0.0"
+tag_regex = "^(?P<version>\\d+\\.\\d+\\.\\d+)$"
 
 [tool.pytest.ini_options]
 addopts = "-ra -q"
