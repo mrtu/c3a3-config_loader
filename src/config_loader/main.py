@@ -13,6 +13,7 @@ A seamless configuration loading system that supports:
 - AES256 obfuscation for sensitive values
 - Plugin system for protocol-based value loading
 """
+from __future__ import annotations
 
 import json
 import os
