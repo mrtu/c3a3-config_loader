@@ -14,15 +14,29 @@ A seamless configuration loading system that supports:
 - Plugin system for protocol-based value loading
 """
 
-from .models import ConfigParam, ConfigArg
+import json
+import os
+import sys
+from pathlib import Path
+from typing import Dict, List, Any, Optional
+
 from .encryption import EncryptionManager
+from .loaders import ArgumentLoader, EnvironmentLoader, RCLoader
+from .models import ConfigParam, ConfigArg
+from .plugin_interface import ConfigPlugin
+from .plugin_manager import PluginManager
 from .result import ConfigurationResult
 from .validator import ConfigValidator
-from .loaders import ArgumentLoader, EnvironmentLoader, RCLoader
-from .plugin_manager import PluginManager
-from .plugin_interface import ConfigPlugin
-import json
-from typing import Dict, List, Any, Optional
+
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
+try:
+    import jsonschema
+except ImportError:
+    jsonschema = None
 
 
 class Configuration:
@@ -358,6 +372,83 @@ class Configuration:
         if param.namespace:
             return f"{param.name}.{param.namespace}"
         return param.name
+
+
+def _detect_script_name() -> str:
+    """Detect the script name from sys.argv[0]."""
+    script_path = sys.argv[0]
+    script_name = os.path.splitext(os.path.basename(script_path))[0]
+    return script_name
+
+
+def _load_schema() -> Dict[str, Any]:
+    """Load the configuration schema."""
+    schema_path = Path(__file__).parent / "config_schema.json"
+    with open(schema_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def _validate_config_schema(config_data: Dict[str, Any]) -> None:
+    """Validate configuration data against the schema."""
+    if jsonschema is None:
+        print("Warning: Schema validation requires 'jsonschema' package. Install with: pip install jsonschema")
+        return
+    
+    try:
+        schema = _load_schema()
+        jsonschema.validate(config_data, schema)
+    except jsonschema.ValidationError as e:
+        raise ValueError(f"Configuration validation error: {e.message}")
+    except Exception as e:
+        raise ValueError(f"Schema validation failed: {e}")
+
+
+def _check_schema_version(config_data: Dict[str, Any]) -> None:
+    """Check if the schema version is supported."""
+    schema_version = config_data.get("schema_version")
+    if not schema_version:
+        raise ValueError("Configuration file must include 'schema_version' field")
+    
+    # For now, we support version 1.0 and 1.x
+    supported_versions = ["1.0", "1.0.0"]
+    if schema_version not in supported_versions:
+        print(f"Warning: Schema version '{schema_version}' may not be fully supported. Supported versions: {supported_versions}")
+
+
+def _load_config_file(config_path: Path) -> Dict[str, Any]:
+    """Load configuration from JSON or YAML file."""
+    if not config_path.exists():
+        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+    
+    with open(config_path, 'r', encoding='utf-8') as f:
+        if config_path.suffix.lower() in ['.yaml', '.yml']:
+            if yaml is None:
+                raise ImportError("YAML support requires 'pyyaml' package. Install with: pip install pyyaml")
+            config_data = yaml.safe_load(f)
+        elif config_path.suffix.lower() == '.json':
+            config_data = json.load(f)
+        else:
+            raise ValueError(f"Unsupported configuration file format: {config_path.suffix}")
+    
+    # Validate schema version and structure
+    _check_schema_version(config_data)
+    _validate_config_schema(config_data)
+    
+    return config_data
+
+
+def load_config_auto(plugins: Optional[List[ConfigPlugin]] = None) -> Configuration:
+    """Automatically load configuration from script_name.json or script_name.yaml."""
+    script_name = _detect_script_name()
+    
+    # Try JSON first, then YAML
+    for ext in ['.json', '.yaml', '.yml']:
+        config_path = Path(f"{script_name}{ext}")
+        if config_path.exists():
+            config_data = _load_config_file(config_path)
+            return Configuration(config_data, plugins)
+    
+    raise FileNotFoundError(f"No configuration file found for script '{script_name}'. Expected: {script_name}.json, {script_name}.yaml, or {script_name}.yml")
 
 
 def load_config(fp, plugins: Optional[List[ConfigPlugin]] = None) -> Configuration:

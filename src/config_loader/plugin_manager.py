@@ -9,10 +9,11 @@ Manages registration and execution of configuration plugins.
 
 import re
 from typing import Dict, Any, TYPE_CHECKING
+
 from .plugin_interface import ConfigPlugin, PluginManifest
 
 if TYPE_CHECKING:
-    from .main import Configuration
+    pass
 
 
 class PluginManager:

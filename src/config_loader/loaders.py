@@ -10,8 +10,8 @@ Handles loading configuration from different sources:
 - RC files (TOML format)
 """
 
-import os
 import argparse
+import os
 from pathlib import Path
 from typing import Dict, List, Any, TYPE_CHECKING
 
@@ -25,7 +25,7 @@ except ImportError:
         tomllib = None
 
 if TYPE_CHECKING:
-    from .main import Configuration
+    pass
 
 
 class ArgumentLoader:

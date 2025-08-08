@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "C3A3 Configuration Schema",
+  "description": "Schema for c3a3-config-loader configuration files",
+  "type": "object",
+  "required": ["schema_version", "app_name"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version of the configuration schema",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$"
+    },
+    "app_name": {
+      "type": "string",
+      "description": "Application name",
+      "pattern": "^[a-z0-9_-]+$"
+    },
+    "precedence": {
+      "type": "array",
+      "description": "Order of precedence for configuration sources",
+      "items": {
+        "type": "string",
+        "enum": ["args", "env", "rc"]
+      },
+      "uniqueItems": true,
+      "default": ["args", "env", "rc"]
+    },
+    "sources": {
+      "type": "object",
+      "description": "Enable/disable configuration sources",
+      "properties": {
+        "args": {"type": "boolean", "default": true},
+        "env": {"type": "boolean", "default": true},
+        "rc": {"type": "boolean", "default": true}
+      },
+      "additionalProperties": false,
+      "default": {"args": true, "env": true, "rc": true}
+    },
+    "print_help_on_err": {
+      "type": "boolean",
+      "description": "Print help on error",
+      "default": false
+    },
+    "handle_protocol": {
+      "type": "boolean",
+      "description": "Enable protocol handling",
+      "default": true
+    },
+    "parameters": {
+      "type": "array",
+      "description": "Configuration parameters",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "namespace": {
+            "type": ["string", "null"],
+            "description": "Parameter namespace",
+            "pattern": "^[a-z0-9_-]+$"
+          },
+          "name": {
+            "type": "string",
+            "description": "Parameter name",
+            "pattern": "^[a-z0-9_-]+$"
+          },
+          "type": {
+            "type": "string",
+            "description": "Parameter type",
+            "enum": ["string", "number", "boolean"]
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether parameter is required",
+            "default": false
+          },
+          "default": {
+            "description": "Default value for parameter"
+          },
+          "accepts": {
+            "type": "array",
+            "description": "Allowed values for parameter",
+            "minItems": 2
+          },
+          "obfuscated": {
+            "type": "boolean",
+            "description": "Whether parameter should be obfuscated",
+            "default": false
+          },
+          "protocol": {
+            "type": "string",
+            "description": "Protocol for loading parameter value"
+          },
+          "min": {
+            "type": "number",
+            "description": "Minimum value for numeric parameters"
+          },
+          "max": {
+            "type": "number",
+            "description": "Maximum value for numeric parameters"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "arguments": {
+      "type": "array",
+      "description": "Positional arguments",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Argument name",
+            "pattern": "^[a-z0-9_-]+$"
+          },
+          "type": {
+            "type": "string",
+            "description": "Argument type",
+            "enum": ["string", "number", "boolean"]
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether argument is required",
+            "default": false
+          },
+          "default": {
+            "description": "Default value for argument"
+          },
+          "protocol": {
+            "type": "string",
+            "description": "Protocol for loading argument value"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

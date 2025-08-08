@@ -35,6 +35,39 @@ pip install c3a3-config-loader
 
 ## Quick start
 
+### Automatic Configuration Loading (New!)
+
+The easiest way to get started is with automatic configuration loading:
+
+```python
+from config_loader.main import load_config_auto
+
+# Automatically loads script_name.json or script_name.yaml
+cfg = load_config_auto()
+result = cfg.process()  # auto‑reads sys.argv, os.environ, ~/.c3a3rc
+
+print(result.db.password)               # ➔ "obfuscated:..."
+print(cfg.reveal(result.db.password))   # ➔ "my‑secret"
+print(result.mode)                      # ➔ "prod"
+```
+
+Create a configuration file named after your script (e.g., `myapp.json` for `myapp.py`):
+
+```json
+{
+    "schema_version": "1.0",
+    "app_name": "myapp",
+    "precedence": ["args", "env", "rc"],
+    "parameters": [
+        {"namespace": "db", "name": "password", "type": "string", "required": true, "obfuscated": true},
+        {"namespace": null, "name": "mode", "type": "string", "default": "prod", "accepts": ["dev", "prod"]},
+        {"namespace": "app", "name": "timeout", "type": "number", "min": 1, "max": 60, "default": 30}
+    ]
+}
+```
+
+### Manual Configuration (Traditional)
+
 ```python
 from config_loader.main import Configuration
 
@@ -74,6 +107,48 @@ export C3A3_DB_PASSWORD=my‑secret
 [default]
 mode = "dev"
 ```
+
+---
+
+## New Features
+
+### YAML Support
+
+Configuration files can now be written in YAML format alongside JSON:
+
+```yaml
+schema_version: "1.0"
+app_name: myapp
+precedence:
+  - args
+  - env
+  - rc
+parameters:
+  - namespace: db
+    name: password
+    type: string
+    required: true
+    obfuscated: true
+  - namespace: null
+    name: mode
+    type: string
+    default: prod
+    accepts:
+      - dev
+      - prod
+```
+
+The system automatically detects and loads `.json`, `.yaml`, or `.yml` files.
+
+### Schema Validation
+
+All configuration files must now include a `schema_version` field and conform to the defined JSON schema. This ensures:
+
+* **Structure validation**: Required fields, correct data types, valid enum values
+* **Version compatibility**: Forward/backward compatibility handling
+* **Error reporting**: Clear validation error messages
+
+Supported schema versions: `1.0`, `1.0.0`
 
 ---
 

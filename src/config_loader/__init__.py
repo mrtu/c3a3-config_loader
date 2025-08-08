@@ -16,8 +16,8 @@ A seamless configuration loading system that supports:
 
 from .main import Configuration, load_config, load_configs
 from .models import ConfigParam, ConfigArg
-from .result import ConfigurationResult
 from .plugin_interface import ConfigPlugin, PluginManifest
+from .result import ConfigurationResult
 
 __version__ = "1.0.0"
 __all__ = [
