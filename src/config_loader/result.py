@@ -31,7 +31,7 @@ class ConfigurationResult:
         """Export configuration as JSON string."""
         return json.dumps(self._config, indent=2)
 
-    def debug(self):
+    def debug(self) -> None:
         """Print debug information about configuration sources."""
         print("Configuration Debug Information:")
         print("=" * 40)

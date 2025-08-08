@@ -18,7 +18,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, cast, IO
 
 from .encryption import EncryptionManager
 from .loaders import ArgumentLoader, EnvironmentLoader, RCLoader
@@ -28,15 +28,7 @@ from .plugin_manager import PluginManager
 from .result import ConfigurationResult
 from .validator import ConfigValidator
 
-try:
-    import yaml
-except ImportError:
-    yaml = None
-
-try:
-    import jsonschema
-except ImportError:
-    jsonschema = None
+# Optional runtime imports are made inside functions to avoid module-typed None assignments.
 
 
 class Configuration:
@@ -73,7 +65,7 @@ class Configuration:
         """Register a configuration plugin."""
         self.plugin_manager.register_plugin(plugin)
 
-    def _validate_spec(self):
+    def _validate_spec(self) -> None:
         """Validate the configuration specification."""
         self.validator.validate_spec()
 
@@ -92,8 +84,8 @@ class Configuration:
     def process(self, args: List[str]) -> ConfigurationResult:
         """Process and validate configuration from all sources."""
         # Load from all sources
-        sources_data = {}
-        debug_info = {}
+        sources_data: Dict[str, Dict[str, Any]] = {}
+        debug_info: Dict[str, str] = {}
 
         if self.sources.get("args", True):
             sources_data["args"] = self.arg_loader.load(args)
@@ -108,7 +100,7 @@ class Configuration:
         show_debug = sources_data.get("args", {}).get("debug", False)
 
         # Merge according to precedence
-        final_config = {}
+        final_config: Dict[str, Any] = {}
 
         for param in self.parameters:
             namespace = param.namespace or "default"
@@ -265,7 +257,7 @@ class Configuration:
 
         return result
 
-    def _process_protocol_value(self, value: Any, param_or_arg, source: str) -> Any:
+    def _process_protocol_value(self, value: Any, param_or_arg: ConfigParam | ConfigArg, source: str) -> Any:
         """Process a value that might use protocol syntax."""
         if not isinstance(value, str) or not self.plugin_manager.is_protocol_value(
             value
@@ -312,7 +304,14 @@ class Configuration:
     def _parse_value(self, value: str, param_type: str) -> Any:
         """Parse string value to appropriate type."""
         if param_type == "boolean":
-            return value.lower() in ("true", "1", "yes", "on")
+            true_vals = {"true", "1", "yes", "on"}
+            false_vals = {"false", "0", "no", "off"}
+            v = value.strip().lower()
+            if v in true_vals:
+                return True
+            if v in false_vals:
+                return False
+            raise ValueError(f"Invalid boolean: {value}")
         elif param_type == "number":
             try:
                 if "." in value:
@@ -322,7 +321,7 @@ class Configuration:
                 raise ValueError(f"Invalid number: {value}")
         return value
 
-    def print_help(self):
+    def print_help(self) -> None:
         """Print CLI help information."""
         print(
             f"\nUsage: {self.app_name} [OPTIONS] {' '.join(arg.name.upper() if arg.required else f'[{arg.name.upper()}]' for arg in self.arguments)}"
@@ -370,7 +369,7 @@ class Configuration:
     def _get_arg_name(self, param: ConfigParam) -> str:
         """Get command line argument name."""
         if param.namespace:
-            return f"{param.name}.{param.namespace}"
+            return f"{param.namespace}.{param.name}"
         return param.name
 
 
@@ -385,21 +384,30 @@ def _load_schema() -> Dict[str, Any]:
     """Load the configuration schema."""
     schema_path = Path(__file__).parent / "config_schema.json"
     with open(schema_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        data = json.load(f)
+    if not isinstance(data, dict):
+        raise ValueError("Schema file must contain a JSON object at the top level")
+    return cast(Dict[str, Any], data)
 
 
 def _validate_config_schema(config_data: Dict[str, Any]) -> None:
     """Validate configuration data against the schema."""
-    if jsonschema is None:
+    try:
+        import importlib
+        jsonschema_mod: Any = importlib.import_module("jsonschema")
+    except Exception:
         print("Warning: Schema validation requires 'jsonschema' package. Install with: pip install jsonschema")
         return
     
     try:
         schema = _load_schema()
-        jsonschema.validate(config_data, schema)
-    except jsonschema.ValidationError as e:
-        raise ValueError(f"Configuration validation error: {e.message}")
+        jsonschema_mod.validate(config_data, schema)
+    except FileNotFoundError:
+        # If the packaged schema is not available, warn and skip validation
+        print("Warning: Schema file not found; skipping JSON schema validation.")
+        return
     except Exception as e:
+        # jsonschema.ValidationError is not typed here; report generically
         raise ValueError(f"Schema validation failed: {e}")
 
 
@@ -422,14 +430,21 @@ def _load_config_file(config_path: Path) -> Dict[str, Any]:
     
     with open(config_path, 'r', encoding='utf-8') as f:
         if config_path.suffix.lower() in ['.yaml', '.yml']:
-            if yaml is None:
+            try:
+                import importlib
+                yaml_mod: Any = importlib.import_module("yaml")
+            except Exception:
                 raise ImportError("YAML support requires 'pyyaml' package. Install with: pip install pyyaml")
-            config_data = yaml.safe_load(f)
+            loaded = yaml_mod.safe_load(f)
         elif config_path.suffix.lower() == '.json':
-            config_data = json.load(f)
+            loaded = json.load(f)
         else:
             raise ValueError(f"Unsupported configuration file format: {config_path.suffix}")
     
+    if not isinstance(loaded, dict):
+        raise ValueError("Configuration file must contain a top-level mapping/object")
+    config_data = loaded
+
     # Validate schema version and structure
     _check_schema_version(config_data)
     _validate_config_schema(config_data)
@@ -438,22 +453,41 @@ def _load_config_file(config_path: Path) -> Dict[str, Any]:
 
 
 def load_config_auto(plugins: Optional[List[ConfigPlugin]] = None) -> Configuration:
-    """Automatically load configuration from script_name.json or script_name.yaml."""
+    """Automatically load configuration from script_name.json or script_name.yaml.
+
+    Validation rules:
+    - If none of {script}.json/.yaml/.yml exists in CWD, raise FileNotFoundError.
+    - If more than one exists (e.g., both JSON and YAML), raise a ValueError about duplicate configs.
+    - If exactly one exists, load it.
+    """
     script_name = _detect_script_name()
-    
-    # Try JSON first, then YAML
-    for ext in ['.json', '.yaml', '.yml']:
-        config_path = Path(f"{script_name}{ext}")
-        if config_path.exists():
-            config_data = _load_config_file(config_path)
-            return Configuration(config_data, plugins)
-    
-    raise FileNotFoundError(f"No configuration file found for script '{script_name}'. Expected: {script_name}.json, {script_name}.yaml, or {script_name}.yml")
+
+    candidates = [Path(f"{script_name}{ext}") for ext in [".json", ".yaml", ".yml"]]
+    present = [p for p in candidates if p.exists()]
+
+    if not present:
+        raise FileNotFoundError(
+            f"No configuration file found for script '{script_name}'. Expected: {script_name}.json, {script_name}.yaml, or {script_name}.yml"
+        )
+
+    if len(present) > 1:
+        # Duplicate configuration definitions found
+        present_list = ", ".join(str(p) for p in present)
+        raise ValueError(
+            f"Multiple configuration files found for script '{script_name}': {present_list}. Please keep only one."
+        )
+
+    # Exactly one file to load
+    config_data = _load_config_file(present[0])
+    return Configuration(config_data, plugins)
 
 
-def load_config(fp, plugins: Optional[List[ConfigPlugin]] = None) -> Configuration:
+
+def load_config(fp: IO[str], plugins: Optional[List[ConfigPlugin]] = None) -> Configuration:
     """Load configuration from file pointer."""
     config_data = json.load(fp)
+    if not isinstance(config_data, dict):
+        raise ValueError("Configuration file must contain a top-level mapping/object")
     return Configuration(config_data, plugins)
 
 

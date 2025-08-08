@@ -13,19 +13,26 @@ Handles loading configuration from different sources:
 import argparse
 import os
 from pathlib import Path
-from typing import Dict, List, Any, TYPE_CHECKING
+from typing import Dict, List, Any, TYPE_CHECKING, Optional
+from types import ModuleType
 
+from .models import ConfigParam
+if TYPE_CHECKING:
+    from .main import Configuration
+
+# Optional TOML parser (tomllib on 3.11+, fallback to tomli)
+_tomllib: Optional[ModuleType]
 try:
-    import tomllib
+    import tomllib as _tomllib_mod  # Python 3.11+
+    _tomllib = _tomllib_mod
 except ImportError:
     try:
-        import tomli as tomllib
-    except ImportError:
+        import importlib
+        _tomllib = importlib.import_module("tomli")
+    except Exception:
         print("Warning: TOML support requires Python 3.11+ or 'tomli' package")
-        tomllib = None
+        _tomllib = None
 
-if TYPE_CHECKING:
-    pass
 
 
 class ArgumentLoader:
@@ -58,7 +65,7 @@ class ArgumentLoader:
         parsed, _ = parser.parse_known_args(args)
         return vars(parsed)
 
-    def _get_arg_name(self, param) -> str:
+    def _get_arg_name(self, param: ConfigParam) -> str:
         """Get command line argument name."""
         if param.namespace:
             return f"{param.namespace}.{param.name}"
@@ -73,7 +80,7 @@ class EnvironmentLoader:
 
     def load(self) -> Dict[str, Any]:
         """Load configuration from environment variables."""
-        config = {}
+        config: Dict[str, Dict[str, Any]] = {}
         for param in self.config.parameters:
             env_name = self._get_env_name(param)
             if env_name in os.environ:
@@ -83,7 +90,7 @@ class EnvironmentLoader:
                 config[namespace][param.name] = os.environ[env_name]
         return config
 
-    def _get_env_name(self, param) -> str:
+    def _get_env_name(self, param: ConfigParam) -> str:
         """Get environment variable name."""
         app = self.config.app_name.upper().replace("-", "_")
         namespace = (
@@ -104,7 +111,7 @@ class RCLoader:
 
     def load(self) -> Dict[str, Any]:
         """Load configuration from RC file."""
-        if not tomllib:
+        if not _tomllib:
             return {}
 
         rc_file = Path.home() / f".{self.config.app_name.lower()}rc"
@@ -113,7 +120,10 @@ class RCLoader:
 
         try:
             with open(rc_file, "rb") as f:
-                return tomllib.load(f)
+                data = _tomllib.load(f)
+            if not isinstance(data, dict):
+                return {}
+            return dict(data)
         except Exception as e:
             print(f"Warning: Could not load RC file {rc_file}: {e}")
             return {}

@@ -23,6 +23,7 @@ classifiers = [
 dependencies = [
     "cryptography>=42.0.0",
     "tomli>=2.0.0 ; python_version<'3.11'",
+    "pyyaml>=6.0.0",
 ]
 dynamic = ["version"]
 
@@ -61,4 +62,18 @@ testpaths = ["tests"]
 
 [tool.mypy]
 strict = true
+mypy_path = ["src"]
 files = ["config_loader"]
+exclude = [
+    "^out/production/",
+    "^src/.*\\.egg-info/",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+extend-exclude = [
+    "out/production",
+    "src/**/*.egg-info",
+    "**/.venv",
+]

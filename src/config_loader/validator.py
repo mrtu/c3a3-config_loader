@@ -8,6 +8,10 @@ Validates configuration specifications and ensures correctness.
 """
 
 import re
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .main import Configuration
 
 class ConfigValidator:
     """Validates configuration specifications."""
@@ -15,7 +19,7 @@ class ConfigValidator:
     def __init__(self, config: "Configuration"):
         self.config = config
 
-    def validate_spec(self):
+    def validate_spec(self) -> None:
         """Validate the configuration specification."""
         errors = []
 

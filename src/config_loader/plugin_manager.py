@@ -8,12 +8,13 @@ Manages registration and execution of configuration plugins.
 """
 
 import re
-from typing import Dict, Any, TYPE_CHECKING
+from typing import Dict, Any, TYPE_CHECKING, Optional
 
 from .plugin_interface import ConfigPlugin, PluginManifest
+from .models import ConfigParam
 
 if TYPE_CHECKING:
-    pass
+    from .main import Configuration
 
 
 class PluginManager:
@@ -104,7 +105,7 @@ class PluginManager:
 
         return match.group(1), match.group(2)
 
-    def load_protocol_value(self, value: str, expected_type: str = None) -> Any:
+    def load_protocol_value(self, value: str, expected_type: Optional[str] = None) -> Any:
         """
         Load a value using the appropriate protocol plugin.
 
@@ -154,7 +155,7 @@ class PluginManager:
         """Get list of all registered protocols."""
         return list(self._plugins.keys())
 
-    def validate_parameter_protocol_compatibility(self, param, protocol: str) -> None:
+    def validate_parameter_protocol_compatibility(self, param: ConfigParam, protocol: str) -> None:
         """
         Validate that a parameter is compatible with a required protocol.
 

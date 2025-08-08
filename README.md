@@ -176,8 +176,8 @@ Register at `Configuration(..., plugins=[VaultPlugin()])` and list `protocol:"va
 ## Coverage & quality
 
 * **Tests:** 40+pytest cases, **80%** overall coverage
-* **Type‑checking:** `mypy --strict`
-* **Lint:** `ruff --fix`
+* **Type‑checking:** `mypy --strict -p config_loader`
+* **Lint:** `ruff check --fix`
 
 ---
 

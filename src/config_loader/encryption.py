@@ -13,16 +13,17 @@ import secrets
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from typing import Any
 
 
 class EncryptionManager:
     """Manages AES256 encryption for obfuscated configuration values."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Generate AES256 key for obfuscation
         self._encryption_key = secrets.token_bytes(32)  # 256 bits / 8 = 32 bytes
 
-    def obfuscate(self, value) -> str:
+    def obfuscate(self, value: Any) -> str:
         """Encrypt and encode a value for obfuscation."""
         if not isinstance(value, str):
             value = str(value)
